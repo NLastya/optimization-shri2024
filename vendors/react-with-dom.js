@@ -15457,72 +15457,141 @@ const OffscreenLane = 1073741824;
   var syncQueue = null;
   var includesLegacySyncCallbacks = false;
   var isFlushingSyncQueue = false;
-  function scheduleSyncCallback(callback) {
-    // Push this callback into an internal queue. We'll flush these either in
-    // the next tick, or earlier if something calls `flushSyncCallbackQueue`.
-    if (syncQueue === null) {
-      syncQueue = [callback];
-    } else {
-      // Push onto existing queue. Don't need to schedule a callback because
-      // we already scheduled one when we created the queue.
-      syncQueue.push(callback);
-    }
+  // function scheduleSyncCallback(callback) {
+  //   // Push this callback into an internal queue. We'll flush these either in
+  //   // the next tick, or earlier if something calls `flushSyncCallbackQueue`.
+  //   if (syncQueue === null) {
+  //     syncQueue = [callback];
+  //   } else {
+  //     // Push onto existing queue. Don't need to schedule a callback because
+  //     // we already scheduled one when we created the queue.
+  //     syncQueue.push(callback);
+  //   }
+  // }
+  // function scheduleLegacySyncCallback(callback) {
+  //   includesLegacySyncCallbacks = true;
+  //   scheduleSyncCallback(callback);
+  // }
+  // function flushSyncCallbacksOnlyInLegacyMode() {
+  //   // Only flushes the queue if there's a legacy sync callback scheduled.
+  //   // TODO: There's only a single type of callback: performSyncOnWorkOnRoot. So
+  //   // it might make more sense for the queue to be a list of roots instead of a
+  //   // list of generic callbacks. Then we can have two: one for legacy roots, one
+  //   // for concurrent roots. And this method would only flush the legacy ones.
+  //   if (includesLegacySyncCallbacks) {
+  //     flushSyncCallbacks();
+  //   }
+  // }
+  // function flushSyncCallbacks() {
+  //   if (!isFlushingSyncQueue && syncQueue !== null) {
+  //     // Prevent re-entrance.
+  //     isFlushingSyncQueue = true;
+  //     var i = 0;
+  //     var previousUpdatePriority = getCurrentUpdatePriority();
+
+  //     try {
+  //       var isSync = true;
+  //       var queue = syncQueue; // TODO: Is this necessary anymore? The only user code that runs in this
+  //       // queue is in the render or commit phases.
+
+  //       setCurrentUpdatePriority(DiscreteEventPriority);
+
+  //       for (; i < queue.length; i++) {
+  //         var callback = queue[i];
+
+  //         do {
+  //           callback = callback(isSync);
+  //         } while (callback !== null);
+  //       }
+
+  //       syncQueue = null;
+  //       includesLegacySyncCallbacks = false;
+  //     } catch (error) {
+  //       // If something throws, leave the remaining callbacks on the queue.
+  //       if (syncQueue !== null) {
+  //         syncQueue = syncQueue.slice(i + 1);
+  //       } // Resume flushing in the next tick
+
+
+  //       scheduleCallback(ImmediatePriority, flushSyncCallbacks);
+  //       throw error;
+  //     } finally {
+  //       setCurrentUpdatePriority(previousUpdatePriority);
+  //       isFlushingSyncQueue = false;
+  //     }
+  //   }
+
+  //   return null;
+  // }
+
+// 
+function scheduleSyncCallback(callback) {
+  if (syncQueue === null) {
+    syncQueue = [callback];
+  } else {
+    syncQueue.push(callback);
   }
-  function scheduleLegacySyncCallback(callback) {
-    includesLegacySyncCallbacks = true;
-    scheduleSyncCallback(callback);
+}
+
+function scheduleLegacySyncCallback(callback) {
+  includesLegacySyncCallbacks = true;
+  scheduleSyncCallback(callback);
+}
+
+function flushSyncCallbacksOnlyInLegacyMode() {
+  if (includesLegacySyncCallbacks) {
+    flushSyncCallbacks();
   }
-  function flushSyncCallbacksOnlyInLegacyMode() {
-    // Only flushes the queue if there's a legacy sync callback scheduled.
-    // TODO: There's only a single type of callback: performSyncOnWorkOnRoot. So
-    // it might make more sense for the queue to be a list of roots instead of a
-    // list of generic callbacks. Then we can have two: one for legacy roots, one
-    // for concurrent roots. And this method would only flush the legacy ones.
-    if (includesLegacySyncCallbacks) {
-      flushSyncCallbacks();
-    }
-  }
-  function flushSyncCallbacks() {
-    if (!isFlushingSyncQueue && syncQueue !== null) {
-      // Prevent re-entrance.
-      isFlushingSyncQueue = true;
-      var i = 0;
-      var previousUpdatePriority = getCurrentUpdatePriority();
+}
 
-      try {
-        var isSync = true;
-        var queue = syncQueue; // TODO: Is this necessary anymore? The only user code that runs in this
-        // queue is in the render or commit phases.
+function flushSyncCallbacks() {
+  if (!isFlushingSyncQueue && syncQueue !== null) {
+    isFlushingSyncQueue = true;
+    var i = 0;
+    var previousUpdatePriority = getCurrentUpdatePriority();
 
-        setCurrentUpdatePriority(DiscreteEventPriority);
+    try {
+      var isSync = true;var queue = syncQueue;
+      setCurrentUpdatePriority(DiscreteEventPriority);
 
-        for (; i < queue.length; i++) {
-          var callback = queue[i];
+      for (; i < queue.length; i++) {
+        var callback = queue[i];
 
-          do {
-            callback = callback(isSync);
-          } while (callback !== null);
-        }
-
-        syncQueue = null;
-        includesLegacySyncCallbacks = false;
-      } catch (error) {
-        // If something throws, leave the remaining callbacks on the queue.
-        if (syncQueue !== null) {
-          syncQueue = syncQueue.slice(i + 1);
-        } // Resume flushing in the next tick
-
-
-        scheduleCallback(ImmediatePriority, flushSyncCallbacks);
-        throw error;
-      } finally {
-        setCurrentUpdatePriority(previousUpdatePriority);
-        isFlushingSyncQueue = false;
+        do {
+          callback = callback(isSync);
+        } while (callback !== null);
       }
-    }
 
-    return null;
+      syncQueue = null;
+      includesLegacySyncCallbacks = false;
+    } catch (error) {
+      if (syncQueue !== null) {
+        syncQueue = syncQueue.slice(i + 1);
+      }
+      scheduleCallback(ImmediatePriority, flushSyncCallbacks);
+      throw error;
+    } finally {
+      setCurrentUpdatePriority(previousUpdatePriority);
+      isFlushingSyncQueue = false;
+    }
   }
+
+  return null;
+}
+
+// 
+
+
+
+
+
+
+
+
+
+
+
+
 
   // TODO: Use the unified fiber stack module instead of this local one?
   // Intentionally not using it yet to derisk the initial implementation, because
@@ -29350,7 +29419,7 @@ const OffscreenLane = 1073741824;
         {
           // We should have already attempted to retry this tree. If we reached
           // this point, it errored again. Commit it.
-          commitRoot(root, workInProgressRootRecoverableErrors, workInProgressTransitions);
+          commitRootImpl(root, workInProgressRootRecoverableErrors, workInProgressTransitions, lanes);
           break;
         }
 
@@ -29388,13 +29457,13 @@ const OffscreenLane = 1073741824;
               // immediately, wait for more data to arrive.
 
 
-              root.timeoutHandle = scheduleTimeout(commitRoot.bind(null, root, workInProgressRootRecoverableErrors, workInProgressTransitions), msUntilTimeout);
+              root.timeoutHandle = scheduleTimeout(commitRootImpl.bind(null, root, workInProgressRootRecoverableErrors, workInProgressTransitions), msUntilTimeout);
               break;
             }
           } // The work expired. Commit immediately.
 
 
-          commitRoot(root, workInProgressRootRecoverableErrors, workInProgressTransitions);
+          commitRootImpl(root, workInProgressRootRecoverableErrors, workInProgressTransitions, 2);
           break;
         }
 
@@ -29426,20 +29495,20 @@ const OffscreenLane = 1073741824;
             if (_msUntilTimeout > 10) {
               // Instead of committing the fallback immediately, wait for more data
               // to arrive.
-              root.timeoutHandle = scheduleTimeout(commitRoot.bind(null, root, workInProgressRootRecoverableErrors, workInProgressTransitions), _msUntilTimeout);
+              root.timeoutHandle = scheduleTimeout(commitRootImpl.bind(null, root, workInProgressRootRecoverableErrors, workInProgressTransitions, 2), _msUntilTimeout);
               break;
             }
           } // Commit the placeholder.
 
 
-          commitRoot(root, workInProgressRootRecoverableErrors, workInProgressTransitions);
+          commitRootImpl(root, workInProgressRootRecoverableErrors, workInProgressTransitions, 2);
           break;
         }
 
       case RootCompleted:
         {
           // The work completed. Ready to commit.
-          commitRoot(root, workInProgressRootRecoverableErrors, workInProgressTransitions);
+          commitRootImpl(root, workInProgressRootRecoverableErrors, workInProgressTransitions, 1);
           break;
         }
 
@@ -29565,22 +29634,33 @@ const OffscreenLane = 1073741824;
       ensureRootIsScheduled(root, now());
       throw fatalError;
     }
+if (exitStatus === RootDidNotComplete) {
+  throw new Error('Root did not complete. This is a bug in React.');
+}
 
-    if (exitStatus === RootDidNotComplete) {
-      throw new Error('Root did not complete. This is a bug in React.');
-    } // We now have a consistent tree. Because this is a sync render, we
-    // will commit it even if something suspended.
+// We now have a consistent tree. Because this is a sync render, we
+// will commit it even if something suspended.
+var finishedWork = root.current.alternate;
+root.finishedWork = finishedWork;
+root.finishedLanes = lanes;
 
+// Прямой вызов commitRootImpl вместо commitRoot
+var previousUpdateLanePriority = getCurrentUpdatePriority();
+var prevTransition = ReactCurrentBatchConfig$3.transition;
 
-    var finishedWork = root.current.alternate;
-    root.finishedWork = finishedWork;
-    root.finishedLanes = lanes;
-    commitRoot(root, workInProgressRootRecoverableErrors, workInProgressTransitions); // Before exiting, make sure there's a callback scheduled for the next
-    // pending level.
+try {
+  ReactCurrentBatchConfig$3.transition = null;
+  setCurrentUpdatePriority(DiscreteEventPriority);
+  commitRootImpl(root, workInProgressRootRecoverableErrors, workInProgressTransitions, previousUpdateLanePriority);
+} finally {
+  ReactCurrentBatchConfig$3.transition = prevTransition;
+  setCurrentUpdatePriority(previousUpdateLanePriority);
+}
 
-    ensureRootIsScheduled(root, now());
-    return null;
-  }
+// Before exiting, make sure there's a callback scheduled for the next pending level.
+ensureRootIsScheduled(root, now());
+return null;
+}
 
   function flushRoot(root, lanes) {
     if (lanes !== NoLanes) {
@@ -30131,23 +30211,23 @@ const OffscreenLane = 1073741824;
     }
   }
 
-  function commitRoot(root, recoverableErrors, transitions) {
-    // TODO: This no longer makes any sense. We already wrap the mutation and
-    // layout phases. Should be able to remove.
-    var previousUpdateLanePriority = getCurrentUpdatePriority();
-    var prevTransition = ReactCurrentBatchConfig$3.transition;
+  // function commitRoot(root, recoverableErrors, transitions) {
+  //   // TODO: This no longer makes any sense. We already wrap the mutation and
+  //   // layout phases. Should be able to remove.
+  //   var previousUpdateLanePriority = getCurrentUpdatePriority();
+  //   var prevTransition = ReactCurrentBatchConfig$3.transition;
 
-    try {
-      ReactCurrentBatchConfig$3.transition = null;
-      setCurrentUpdatePriority(DiscreteEventPriority);
-      commitRootImpl(root, recoverableErrors, transitions, previousUpdateLanePriority);
-    } finally {
-      ReactCurrentBatchConfig$3.transition = prevTransition;
-      setCurrentUpdatePriority(previousUpdateLanePriority);
-    }
+  //   try {
+  //     ReactCurrentBatchConfig$3.transition = null;
+  //     setCurrentUpdatePriority(DiscreteEventPriority);
+  //     commitRootImpl(root, recoverableErrors, transitions, previousUpdateLanePriority);
+  //   } finally {
+  //     ReactCurrentBatchConfig$3.transition = prevTransition;
+  //     setCurrentUpdatePriority(previousUpdateLanePriority);
+  //   }
 
-    return null;
-  }
+  //   return null;
+  // }
 
   function commitRootImpl(root, recoverableErrors, transitions, renderPriorityLevel) {
     do {
@@ -32801,55 +32881,6 @@ const OffscreenLane = 1073741824;
     }
   };
 
-  //  VERSION REAL
-  // function createRoot(container, options) {
-  //   if (!isValidContainer(container)) {
-  //     throw new Error('createRoot(...): Target container is not a DOM element.');
-  //   }
-
-  //   warnIfReactDOMContainerInDEV(container);
-  //   var isStrictMode = false;
-  //   var concurrentUpdatesByDefaultOverride = false;
-  //   var identifierPrefix = '';
-  //   var onRecoverableError = defaultOnRecoverableError;
-  //   var transitionCallbacks = null;
-
-  //   if (options !== null && options !== undefined) {
-  //     {
-  //       if (options.hydrate) {
-  //         warn('hydrate through createRoot is deprecated. Use ReactDOMClient.hydrateRoot(container, <App />) instead.');
-  //       } else {
-  //         if (typeof options === 'object' && options !== null && options.$$typeof === REACT_ELEMENT_TYPE) {
-  //           error('You passed a JSX element to createRoot. You probably meant to ' + 'call root.render instead. ' + 'Example usage:\n\n' + '  let root = createRoot(domContainer);\n' + '  root.render(<App />);');
-  //         }
-  //       }
-  //     }
-
-  //     if (options.unstable_strictMode === true) {
-  //       isStrictMode = true;
-  //     }
-
-  //     if (options.identifierPrefix !== undefined) {
-  //       identifierPrefix = options.identifierPrefix;
-  //     }
-
-  //     if (options.onRecoverableError !== undefined) {
-  //       onRecoverableError = options.onRecoverableError;
-  //     }
-
-  //     if (options.transitionCallbacks !== undefined) {
-  //       transitionCallbacks = options.transitionCallbacks;
-  //     }
-  //   }
-
-  //   var root = createContainer(container, ConcurrentRoot, null, isStrictMode, concurrentUpdatesByDefaultOverride, identifierPrefix, onRecoverableError);
-  //   markContainerAsRoot(root.current, container);
-  //   var rootContainerElement = container.nodeType === COMMENT_NODE ? container.parentNode : container;
-  //   listenToAllSupportedEvents(rootContainerElement);
-  //   return new ReactDOMRoot(root);
-  // }
-
-
   // VERSION 2: big optimization (with optimization of function markStarvedLanesAsExpired(...)) 
   function createRoot(container, options) {
     if (!isValidContainer(container)) {
@@ -32991,68 +33022,168 @@ const OffscreenLane = 1073741824;
 
 
 
-  function ReactDOMHydrationRoot(internalRoot) {
-    this._internalRoot = internalRoot;
+  // function ReactDOMHydrationRoot(internalRoot) {
+  //   this._internalRoot = internalRoot;
+  // }
+
+  // function scheduleHydration(target) {
+  //   if (target) {
+  //     queueExplicitHydrationTarget(target);
+  //   }
+  // }
+
+  // ReactDOMHydrationRoot.prototype.unstable_scheduleHydration = scheduleHydration;
+  // function hydrateRoot(container, initialChildren, options) {
+  //   if (!isValidContainer(container)) {
+  //     throw new Error('hydrateRoot(...): Target container is not a DOM element.');
+  //   }
+
+  //   warnIfReactDOMContainerInDEV(container);
+
+  //   {
+  //     if (initialChildren === undefined) {
+  //       error('Must provide initial children as second argument to hydrateRoot. ' + 'Example usage: hydrateRoot(domContainer, <App />)');
+  //     }
+  //   } // For now we reuse the whole bag of options since they contain
+  //   // the hydration callbacks.
+
+
+  //   var hydrationCallbacks = options != null ? options : null; // TODO: Delete this option
+
+  //   var mutableSources = options != null && options.hydratedSources || null;
+  //   var isStrictMode = false;
+  //   var concurrentUpdatesByDefaultOverride = false;
+  //   var identifierPrefix = '';
+  //   var onRecoverableError = defaultOnRecoverableError;
+
+  //   if (options !== null && options !== undefined) {
+  //     if (options.unstable_strictMode === true) {
+  //       isStrictMode = true;
+  //     }
+
+  //     if (options.identifierPrefix !== undefined) {
+  //       identifierPrefix = options.identifierPrefix;
+  //     }
+
+  //     if (options.onRecoverableError !== undefined) {
+  //       onRecoverableError = options.onRecoverableError;
+  //     }
+  //   }
+
+  //   var root = createHydrationContainer(initialChildren, null, container, ConcurrentRoot, hydrationCallbacks, isStrictMode, concurrentUpdatesByDefaultOverride, identifierPrefix, onRecoverableError);
+  //   markContainerAsRoot(root.current, container); // This can't be a comment node since hydration doesn't work on comment nodes anyway.
+
+  //   listenToAllSupportedEvents(container);
+
+  //   if (mutableSources) {
+  //     for (var i = 0; i < mutableSources.length; i++) {
+  //       var mutableSource = mutableSources[i];
+  //       registerMutableSourceForHydration(root, mutableSource);
+  //     }
+  //   }
+
+  //   return new ReactDOMHydrationRoot(root);
+  // }
+
+// 
+function ReactDOMHydrationRoot(internalRoot) {
+  this._internalRoot = internalRoot;
+}
+
+function scheduleHydration(target) {
+  if (target) {
+    queueExplicitHydrationTarget(target);
+  }
+}
+
+ReactDOMHydrationRoot.prototype.unstable_scheduleHydration = scheduleHydration;
+
+function hydrateRoot(container, initialChildren, options) {
+  if (!isValidContainer(container)) {
+    throw new Error('hydrateRoot(...): Target container is not a DOM element.');
   }
 
-  function scheduleHydration(target) {
-    if (target) {
-      queueExplicitHydrationTarget(target);
+  warnIfReactDOMContainerInDEV(container);
+
+  {
+    if (initialChildren === undefined) {
+      error('Must provide initial children as second argument to hydrateRoot. ' 
+            + 'Example usage: hydrateRoot(domContainer, <App />)');
     }
   }
 
-  ReactDOMHydrationRoot.prototype.unstable_scheduleHydration = scheduleHydration;
-  function hydrateRoot(container, initialChildren, options) {
-    if (!isValidContainer(container)) {
-      throw new Error('hydrateRoot(...): Target container is not a DOM element.');
+  // For now we reuse the whole bag of options since they contain the hydration callbacks.
+  var hydrationCallbacks = options != null ? options : null; // TODO: Delete this option
+  var mutableSources = options != null && options.hydratedSources || null;
+  var isStrictMode = false;
+  var concurrentUpdatesByDefaultOverride = false;
+  var identifierPrefix = '';
+  var onRecoverableError = defaultOnRecoverableError;
+
+  if (options !== null && options !== undefined) {
+    if (options.unstable_strictMode === true) {
+      isStrictMode = true;
     }
 
-    warnIfReactDOMContainerInDEV(container);
-
-    {
-      if (initialChildren === undefined) {
-        error('Must provide initial children as second argument to hydrateRoot. ' + 'Example usage: hydrateRoot(domContainer, <App />)');
-      }
-    } // For now we reuse the whole bag of options since they contain
-    // the hydration callbacks.
-
-
-    var hydrationCallbacks = options != null ? options : null; // TODO: Delete this option
-
-    var mutableSources = options != null && options.hydratedSources || null;
-    var isStrictMode = false;
-    var concurrentUpdatesByDefaultOverride = false;
-    var identifierPrefix = '';
-    var onRecoverableError = defaultOnRecoverableError;
-
-    if (options !== null && options !== undefined) {
-      if (options.unstable_strictMode === true) {
-        isStrictMode = true;
-      }
-
-      if (options.identifierPrefix !== undefined) {
-        identifierPrefix = options.identifierPrefix;
-      }
-
-      if (options.onRecoverableError !== undefined) {
-        onRecoverableError = options.onRecoverableError;
-      }
+    if (options.identifierPrefix !== undefined) {
+      identifierPrefix = options.identifierPrefix;
     }
 
-    var root = createHydrationContainer(initialChildren, null, container, ConcurrentRoot, hydrationCallbacks, isStrictMode, concurrentUpdatesByDefaultOverride, identifierPrefix, onRecoverableError);
-    markContainerAsRoot(root.current, container); // This can't be a comment node since hydration doesn't work on comment nodes anyway.
-
-    listenToAllSupportedEvents(container);
-
-    if (mutableSources) {
-      for (var i = 0; i < mutableSources.length; i++) {
-        var mutableSource = mutableSources[i];
-        registerMutableSourceForHydration(root, mutableSource);
-      }
+    if (options.onRecoverableError !== undefined) {
+      onRecoverableError = options.onRecoverableError;
     }
-
-    return new ReactDOMHydrationRoot(root);
   }
+
+  // Определение используемого режима на основе тега корня
+  var rootTag = container.nodeName.toLowerCase();
+  var isConcurrentMode = rootTag === 'concurrent-root' || rootTag === 'concurrent';
+
+  var root = createHydrationContainer(
+    initialChildren,
+    null,
+    container,
+    isConcurrentMode ? ConcurrentRoot : LegacyRoot,
+    hydrationCallbacks,
+    isStrictMode,
+    concurrentUpdatesByDefaultOverride,
+    identifierPrefix,
+    onRecoverableError
+  );
+  
+  markContainerAsRoot(root.current, container); // This can't be a comment node since hydration doesn't work on comment nodes anyway.
+  listenToAllSupportedEvents(container);
+
+  if (mutableSources) {
+    for (var i = 0; i < mutableSources.length; i++) {
+      var mutableSource = mutableSources[i];
+      registerMutableSourceForHydration(root, mutableSource);
+    }
+  }
+
+  return new ReactDOMHydrationRoot(root);
+}
+// 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   function isValidContainer(node) {
     return !!(node && (node.nodeType === ELEMENT_NODE || node.nodeType === DOCUMENT_NODE || node.nodeType === DOCUMENT_FRAGMENT_NODE || !disableCommentsAsDOMContainers  ));
   } // TODO: Remove this function which also includes comment nodes.
