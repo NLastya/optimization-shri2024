@@ -1,11 +1,5 @@
 /**
  * @license React
- * react.development.js
- *
- * Copyright (c) Facebook, Inc. and its affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
  */
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
@@ -8484,154 +8478,217 @@
     }
   }
 
-  var NoMode =
-  /*                         */
-  0; // TODO: Remove ConcurrentMode by reading from the root tag instead
+  // 
+// Fiber Modes
+const NoMode = 0;
+const ConcurrentMode = 1;
+const ProfileMode = 2;
+const StrictLegacyMode = 8;
+const StrictEffectsMode = 16;
 
-  var ConcurrentMode =
-  /*                 */
-  1;
-  var ProfileMode =
-  /*                    */
-  2;
-  var StrictLegacyMode =
-  /*               */
-  8;
-  var StrictEffectsMode =
-  /*              */
-  16;
+// Count leading zeros function
+const clz32 = Math.clz32 || clz32Fallback;
 
-  // TODO: This is pretty well supported by browsers. Maybe we can drop it.
-  var clz32 = Math.clz32 ? Math.clz32 : clz32Fallback; // Count leading zeros.
-  // Based on:
-  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/clz32
+const log = Math.log;
+const LN2 = Math.LN2;
 
-  var log = Math.log;
-  var LN2 = Math.LN2;
+function clz32Fallback(x) {
+  const asUint = x >>> 0;
+  return asUint === 0 ? 32 : 31 - (log(asUint) / LN2 | 0) | 0;
+}
 
-  function clz32Fallback(x) {
-    var asUint = x >>> 0;
+// Lane Constants
+const TotalLanes = 31;
+const NoLanes = 0;
+const NoLane = 0;
+const SyncLane = 1;
+const InputContinuousHydrationLane = 2;
+const InputContinuousLane = 4;
+const DefaultHydrationLane = 8;
+const DefaultLane = 16;
+const TransitionHydrationLane = 32;
+const TransitionLanes = 4194240;
+const TransitionLane1 = 64;
+const TransitionLane2 = 128;
+const TransitionLane3 = 256;
+const TransitionLane4 = 512;
+const TransitionLane5 = 1024;
+const TransitionLane6 = 2048;
+const TransitionLane7 = 4096;
+const TransitionLane8 = 8192;
+const TransitionLane9 = 16384;
+const TransitionLane10 = 32768;
+const TransitionLane11 = 65536;
+const TransitionLane12 = 131072;
+const TransitionLane13 = 262144;
+const TransitionLane14 = 524288;
+const TransitionLane15 = 1048576;
+const TransitionLane16 = 2097152;
+const RetryLanes = 130023424;
+const RetryLane1 = 4194304;
+const RetryLane2 = 8388608;
+const RetryLane3 = 16777216;
+const RetryLane4 = 33554432;
+const RetryLane5 = 67108864;
+const SomeRetryLane = RetryLane1;
+const SelectiveHydrationLane = 134217728;
+const NonIdleLanes = 268435455;
+const IdleHydrationLane = 268435456;
+const IdleLane = 536870912;
+const OffscreenLane = 1073741824;
+  // 
+  
+  // var NoMode =
+  // /*                         */
+  // 0; // TODO: Remove ConcurrentMode by reading from the root tag instead
 
-    if (asUint === 0) {
-      return 32;
-    }
+  // var ConcurrentMode =
+  // /*                 */
+  // 1;
+  // var ProfileMode =
+  // /*                    */
+  // 2;
+  // var StrictLegacyMode =
+  // /*               */
+  // 8;
+  // var StrictEffectsMode =
+  // /*              */
+  // 16;
 
-    return 31 - (log(asUint) / LN2 | 0) | 0;
-  }
+  // // TODO: This is pretty well supported by browsers. Maybe we can drop it.
+  // var clz32 = Math.clz32 ? Math.clz32 : clz32Fallback; // Count leading zeros.
+  // // Based on:
+  // // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/clz32
 
-  // If those values are changed that package should be rebuilt and redeployed.
+  // var log = Math.log;
+  // var LN2 = Math.LN2;
 
-  var TotalLanes = 31;
-  var NoLanes =
-  /*                        */
-  0;
-  var NoLane =
-  /*                          */
-  0;
-  var SyncLane =
-  /*                        */
-  1;
-  var InputContinuousHydrationLane =
-  /*    */
-  2;
-  var InputContinuousLane =
-  /*             */
-  4;
-  var DefaultHydrationLane =
-  /*            */
-  8;
-  var DefaultLane =
-  /*                     */
-  16;
-  var TransitionHydrationLane =
-  /*                */
-  32;
-  var TransitionLanes =
-  /*                       */
-  4194240;
-  var TransitionLane1 =
-  /*                        */
-  64;
-  var TransitionLane2 =
-  /*                        */
-  128;
-  var TransitionLane3 =
-  /*                        */
-  256;
-  var TransitionLane4 =
-  /*                        */
-  512;
-  var TransitionLane5 =
-  /*                        */
-  1024;
-  var TransitionLane6 =
-  /*                        */
-  2048;
-  var TransitionLane7 =
-  /*                        */
-  4096;
-  var TransitionLane8 =
-  /*                        */
-  8192;
-  var TransitionLane9 =
-  /*                        */
-  16384;
-  var TransitionLane10 =
-  /*                       */
-  32768;
-  var TransitionLane11 =
-  /*                       */
-  65536;
-  var TransitionLane12 =
-  /*                       */
-  131072;
-  var TransitionLane13 =
-  /*                       */
-  262144;
-  var TransitionLane14 =
-  /*                       */
-  524288;
-  var TransitionLane15 =
-  /*                       */
-  1048576;
-  var TransitionLane16 =
-  /*                       */
-  2097152;
-  var RetryLanes =
-  /*                            */
-  130023424;
-  var RetryLane1 =
-  /*                             */
-  4194304;
-  var RetryLane2 =
-  /*                             */
-  8388608;
-  var RetryLane3 =
-  /*                             */
-  16777216;
-  var RetryLane4 =
-  /*                             */
-  33554432;
-  var RetryLane5 =
-  /*                             */
-  67108864;
-  var SomeRetryLane = RetryLane1;
-  var SelectiveHydrationLane =
-  /*          */
-  134217728;
-  var NonIdleLanes =
-  /*                          */
-  268435455;
-  var IdleHydrationLane =
-  /*               */
-  268435456;
-  var IdleLane =
-  /*                        */
-  536870912;
-  var OffscreenLane =
-  /*                   */
-  1073741824; // This function is used for the experimental timeline (react-devtools-timeline)
-  // It should be kept in sync with the Lanes values above.
+  // function clz32Fallback(x) {
+  //   var asUint = x >>> 0;
+
+  //   if (asUint === 0) {
+  //     return 32;
+  //   }
+
+  //   return 31 - (log(asUint) / LN2 | 0) | 0;
+  // }
+
+  // // If those values are changed that package should be rebuilt and redeployed.
+
+  // var TotalLanes = 31;
+  // var NoLanes =
+  // /*                        */
+  // 0;
+  // var NoLane =
+  // /*                          */
+  // 0;
+  // var SyncLane =
+  // /*                        */
+  // 1;
+  // var InputContinuousHydrationLane =
+  // /*    */
+  // 2;
+  // var InputContinuousLane =
+  // /*             */
+  // 4;
+  // var DefaultHydrationLane =
+  // /*            */
+  // 8;
+  // var DefaultLane =
+  // /*                     */
+  // 16;
+  // var TransitionHydrationLane =
+  // /*                */
+  // 32;
+  // var TransitionLanes =
+  // /*                       */
+  // 4194240;
+  // var TransitionLane1 =
+  // /*                        */
+  // 64;
+  // var TransitionLane2 =
+  // /*                        */
+  // 128;
+  // var TransitionLane3 =
+  // /*                        */
+  // 256;
+  // var TransitionLane4 =
+  // /*                        */
+  // 512;
+  // var TransitionLane5 =
+  // /*                        */
+  // 1024;
+  // var TransitionLane6 =
+  // /*                        */
+  // 2048;
+  // var TransitionLane7 =
+  // /*                        */
+  // 4096;
+  // var TransitionLane8 =
+  // /*                        */
+  // 8192;
+  // var TransitionLane9 =
+  // /*                        */
+  // 16384;
+  // var TransitionLane10 =
+  // /*                       */
+  // 32768;
+  // var TransitionLane11 =
+  // /*                       */
+  // 65536;
+  // var TransitionLane12 =
+  // /*                       */
+  // 131072;
+  // var TransitionLane13 =
+  // /*                       */
+  // 262144;
+  // var TransitionLane14 =
+  // /*                       */
+  // 524288;
+  // var TransitionLane15 =
+  // /*                       */
+  // 1048576;
+  // var TransitionLane16 =
+  // /*                       */
+  // 2097152;
+  // var RetryLanes =
+  // /*                            */
+  // 130023424;
+  // var RetryLane1 =
+  // /*                             */
+  // 4194304;
+  // var RetryLane2 =
+  // /*                             */
+  // 8388608;
+  // var RetryLane3 =
+  // /*                             */
+  // 16777216;
+  // var RetryLane4 =
+  // /*                             */
+  // 33554432;
+  // var RetryLane5 =
+  // /*                             */
+  // 67108864;
+  // var SomeRetryLane = RetryLane1;
+  // var SelectiveHydrationLane =
+  // /*          */
+  // 134217728;
+  // var NonIdleLanes =
+  // /*                          */
+  // 268435455;
+  // var IdleHydrationLane =
+  // /*               */
+  // 268435456;
+  // var IdleLane =
+  // /*                        */
+  // 536870912;
+  // var OffscreenLane =
+  // /*                   */
+  // 1073741824; 
+  
+  
+  // This function is used for the experimental timeline (react-devtools-timeline)
+  // // It should be kept in sync with the Lanes values above.
 
   function getLabelForLane(lane) {
     {
@@ -8951,40 +9008,92 @@
     }
   }
 
+  // function markStarvedLanesAsExpired(root, currentTime) {
+  //   // TODO: This gets called every time we yield. We can optimize by storing
+  //   // the earliest expiration time on the root. Then use that to quickly bail out
+  //   // of this function.
+  //   var pendingLanes = root.pendingLanes;
+  //   var suspendedLanes = root.suspendedLanes;
+  //   var pingedLanes = root.pingedLanes;
+  //   var expirationTimes = root.expirationTimes; // Iterate through the pending lanes and check if we've reached their
+  //   // expiration time. If so, we'll assume the update is being starved and mark
+  //   // it as expired to force it to finish.
+
+  //   var lanes = pendingLanes;
+
+  //   while (lanes > 0) {
+  //     var index = pickArbitraryLaneIndex(lanes);
+  //     var lane = 1 << index;
+  //     var expirationTime = expirationTimes[index];
+
+  //     if (expirationTime === NoTimestamp) {
+  //       // Found a pending lane with no expiration time. If it's not suspended, or
+  //       // if it's pinged, assume it's CPU-bound. Compute a new expiration time
+  //       // using the current time.
+  //       if ((lane & suspendedLanes) === NoLanes || (lane & pingedLanes) !== NoLanes) {
+  //         // Assumes timestamps are monotonically increasing.
+  //         expirationTimes[index] = computeExpirationTime(lane, currentTime);
+  //       }
+  //     } else if (expirationTime <= currentTime) {
+  //       // This lane expired
+  //       root.expiredLanes |= lane;
+  //     }
+
+  //     lanes &= ~lane;
+  //   }
+  // } 
   function markStarvedLanesAsExpired(root, currentTime) {
-    // TODO: This gets called every time we yield. We can optimize by storing
-    // the earliest expiration time on the root. Then use that to quickly bail out
-    // of this function.
+    // Кэшируем ID самого раннего времени истечения на корне
+    if (root.earliestExpirationTime !== undefined && root.earliestExpirationTime > currentTime) {
+      // Если самое раннее время истечения больше текущего времени, нет нужды проверять дальше
+      return;
+    }
+  
     var pendingLanes = root.pendingLanes;
     var suspendedLanes = root.suspendedLanes;
     var pingedLanes = root.pingedLanes;
-    var expirationTimes = root.expirationTimes; // Iterate through the pending lanes and check if we've reached their
-    // expiration time. If so, we'll assume the update is being starved and mark
-    // it as expired to force it to finish.
-
+    var expirationTimes = root.expirationTimes;
+  
     var lanes = pendingLanes;
-
+    var earliestExpirationTime = NoTimestamp;
+  
     while (lanes > 0) {
       var index = pickArbitraryLaneIndex(lanes);
       var lane = 1 << index;
       var expirationTime = expirationTimes[index];
-
+  
       if (expirationTime === NoTimestamp) {
-        // Found a pending lane with no expiration time. If it's not suspended, or
-        // if it's pinged, assume it's CPU-bound. Compute a new expiration time
-        // using the current time.
+        // Найдено ожидающее действие без времени истечения. Вычисляем время истечения для действий, которые не приостановлены или пингуются.
         if ((lane & suspendedLanes) === NoLanes || (lane & pingedLanes) !== NoLanes) {
-          // Assumes timestamps are monotonically increasing.
-          expirationTimes[index] = computeExpirationTime(lane, currentTime);
+          expirationTime = computeExpirationTime(lane, currentTime);
+          expirationTimes[index] = expirationTime;
         }
       } else if (expirationTime <= currentTime) {
-        // This lane expired
+        // Это действие истекло
         root.expiredLanes |= lane;
       }
-
+  
+      // Обновляем самое раннее время истечения
+      if (expirationTime < earliestExpirationTime) {
+        earliestExpirationTime = expirationTime;
+      }
+  
       lanes &= ~lane;
     }
-  } // This returns the highest priority pending lanes regardless of whether they
+  
+    // Сохраните самое раннее время истечения на корне
+    root.earliestExpirationTime = earliestExpirationTime;
+  }
+  
+  function pickArbitraryLaneIndex(lanes) {
+    return 31 - Math.clz32(lanes);
+  }
+  
+
+
+
+  
+  // This returns the highest priority pending lanes regardless of whether they
   // are suspended.
 
   function getHighestPriorityPendingLanes(root) {
@@ -32692,52 +32801,111 @@
     }
   };
 
+  // function createRoot(container, options) {
+  //   if (!isValidContainer(container)) {
+  //     throw new Error('createRoot(...): Target container is not a DOM element.');
+  //   }
+
+  //   warnIfReactDOMContainerInDEV(container);
+  //   var isStrictMode = false;
+  //   var concurrentUpdatesByDefaultOverride = false;
+  //   var identifierPrefix = '';
+  //   var onRecoverableError = defaultOnRecoverableError;
+  //   var transitionCallbacks = null;
+
+  //   if (options !== null && options !== undefined) {
+  //     {
+  //       if (options.hydrate) {
+  //         warn('hydrate through createRoot is deprecated. Use ReactDOMClient.hydrateRoot(container, <App />) instead.');
+  //       } else {
+  //         if (typeof options === 'object' && options !== null && options.$$typeof === REACT_ELEMENT_TYPE) {
+  //           error('You passed a JSX element to createRoot. You probably meant to ' + 'call root.render instead. ' + 'Example usage:\n\n' + '  let root = createRoot(domContainer);\n' + '  root.render(<App />);');
+  //         }
+  //       }
+  //     }
+
+  //     if (options.unstable_strictMode === true) {
+  //       isStrictMode = true;
+  //     }
+
+  //     if (options.identifierPrefix !== undefined) {
+  //       identifierPrefix = options.identifierPrefix;
+  //     }
+
+  //     if (options.onRecoverableError !== undefined) {
+  //       onRecoverableError = options.onRecoverableError;
+  //     }
+
+  //     if (options.transitionCallbacks !== undefined) {
+  //       transitionCallbacks = options.transitionCallbacks;
+  //     }
+  //   }
+
+  //   var root = createContainer(container, ConcurrentRoot, null, isStrictMode, concurrentUpdatesByDefaultOverride, identifierPrefix, onRecoverableError);
+  //   markContainerAsRoot(root.current, container);
+  //   var rootContainerElement = container.nodeType === COMMENT_NODE ? container.parentNode : container;
+  //   listenToAllSupportedEvents(rootContainerElement);
+  //   return new ReactDOMRoot(root);
+  // }
+
+
+  
   function createRoot(container, options) {
     if (!isValidContainer(container)) {
       throw new Error('createRoot(...): Target container is not a DOM element.');
     }
-
     warnIfReactDOMContainerInDEV(container);
     var isStrictMode = false;
     var concurrentUpdatesByDefaultOverride = false;
     var identifierPrefix = '';
     var onRecoverableError = defaultOnRecoverableError;
     var transitionCallbacks = null;
-
+  
     if (options !== null && options !== undefined) {
       {
         if (options.hydrate) {
           warn('hydrate through createRoot is deprecated. Use ReactDOMClient.hydrateRoot(container, <App />) instead.');
         } else {
           if (typeof options === 'object' && options !== null && options.$$typeof === REACT_ELEMENT_TYPE) {
-            error('You passed a JSX element to createRoot. You probably meant to ' + 'call root.render instead. ' + 'Example usage:\n\n' + '  let root = createRoot(domContainer);\n' + '  root.render(<App />);');
+            error('You passed a JSX element to createRoot. You probably meant to ' +
+                  'call root.render instead. ' +
+                  'Example usage:\n\n' +
+                  '  let root = createRoot(domContainer);\n' +
+                  '  root.render(<App />);');
           }
         }
       }
-
       if (options.unstable_strictMode === true) {
         isStrictMode = true;
       }
-
       if (options.identifierPrefix !== undefined) {
         identifierPrefix = options.identifierPrefix;
       }
-
       if (options.onRecoverableError !== undefined) {
         onRecoverableError = options.onRecoverableError;
       }
-
       if (options.transitionCallbacks !== undefined) {
         transitionCallbacks = options.transitionCallbacks;
       }
     }
-
-    var root = createContainer(container, ConcurrentRoot, null, isStrictMode, concurrentUpdatesByDefaultOverride, identifierPrefix, onRecoverableError);
+    var root = createContainer(
+      container,
+      ConcurrentRoot,
+      null,
+      isStrictMode,
+      concurrentUpdatesByDefaultOverride,
+      identifierPrefix,
+      onRecoverableError
+    );
+    // Инициализация earliestExpirationTime
+    root.earliestExpirationTime = Number.MAX_VALUE;
     markContainerAsRoot(root.current, container);
     var rootContainerElement = container.nodeType === COMMENT_NODE ? container.parentNode : container;
     listenToAllSupportedEvents(rootContainerElement);
     return new ReactDOMRoot(root);
   }
+
+
 
   function ReactDOMHydrationRoot(internalRoot) {
     this._internalRoot = internalRoot;
