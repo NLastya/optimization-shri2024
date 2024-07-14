@@ -32801,6 +32801,7 @@ const OffscreenLane = 1073741824;
     }
   };
 
+  //  VERSION REAL
   // function createRoot(container, options) {
   //   if (!isValidContainer(container)) {
   //     throw new Error('createRoot(...): Target container is not a DOM element.');
@@ -32849,7 +32850,7 @@ const OffscreenLane = 1073741824;
   // }
 
 
-  
+  // VERSION 2: big optimization (with optimization of function markStarvedLanesAsExpired(...)) 
   function createRoot(container, options) {
     if (!isValidContainer(container)) {
       throw new Error('createRoot(...): Target container is not a DOM element.');
@@ -32904,6 +32905,89 @@ const OffscreenLane = 1073741824;
     listenToAllSupportedEvents(rootContainerElement);
     return new ReactDOMRoot(root);
   }
+
+
+//  VERSION 3: edit the root tag
+// function createRoot(container, options) {
+//   if (!isValidContainer(container)) {
+//     throw new Error('createRoot(...): Target container is not a DOM element.');
+//   }
+//   warnIfReactDOMContainerInDEV(container);
+  
+//   var isStrictMode = false;
+//   var concurrentUpdatesByDefaultOverride = false;
+//   var identifierPrefix = '';
+//   var onRecoverableError = defaultOnRecoverableError;
+//   var transitionCallbacks = null;
+
+//   if (options !== null && options !== undefined) {
+//     {
+//       if (options.hydrate) {
+//         warn('hydrate through createRoot is deprecated. Use ReactDOMClient.hydrateRoot(container, <App />) instead.');
+//       } else {
+//         if (typeof options === 'object' && options !== null && options.$$typeof === REACT_ELEMENT_TYPE) {
+//           error('You passed a JSX element to createRoot. You probably meant to ' +
+//                 'call root.render instead. ' +
+//                 'Example usage:\n\n' +
+//                 '  let root = createRoot(domContainer);\n' +
+//                 '  root.render(<App />);');
+//         }
+//       }
+//     }
+//     if (options.unstable_strictMode === true) {
+//       isStrictMode = true;
+//     }
+//     if (options.identifierPrefix !== undefined) {
+//       identifierPrefix = options.identifierPrefix;
+//     }
+//     if (options.onRecoverableError !== undefined) {
+//       onRecoverableError = options.onRecoverableError;
+//     }
+//     if (options.transitionCallbacks !== undefined) {
+//       transitionCallbacks = options.transitionCallbacks;
+//     }
+//   }
+
+//   // Определение используемого режима на основе тега корня
+//   var rootTag = container.nodeName.toLowerCase();
+//   var isConcurrentMode = rootTag === 'concurrent-root' || rootTag === 'concurrent';
+
+//   var root = createContainer(
+//     container,
+//     isConcurrentMode ? ConcurrentRoot : LegacyRoot,
+//     null,
+//     isStrictMode,
+//     concurrentUpdatesByDefaultOverride,
+//     identifierPrefix,
+//     onRecoverableError
+//   );
+
+//   // Инициализация earliestExpirationTime
+//   root.earliestExpirationTime = Number.MAX_VALUE;
+//   markContainerAsRoot(root.current, container);
+
+//   var rootContainerElement = container.nodeType === COMMENT_NODE ? container.parentNode : container;
+//   listenToAllSupportedEvents(rootContainerElement);
+
+//   return new ReactDOMRoot(root);
+// }
+
+// // Функции для влагалищения других операций
+// function ReactDOMHydrationRoot(internalRoot) {
+//   this._internalRoot = internalRoot;
+// }
+
+// function scheduleHydration(target) {
+//   if (target) {
+//     queueExplicitHydrationTarget(target);
+//   }
+// }
+// 
+
+
+
+
+
 
 
 
